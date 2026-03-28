@@ -9,8 +9,11 @@
     "dev:client": "vite --port 5174",
     "build": "vite build",
     "start": "tsx server/index.ts",
+    "lint": "eslint . --ext .ts --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit": "npm audit --audit-level=moderate",
+    "ci": "npm run lint && npm run test && npm run build && npm run audit"
   },
   "dependencies": {
     "@fastify/static": "^8",

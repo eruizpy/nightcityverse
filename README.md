@@ -75,6 +75,22 @@ Or with Compose:
 docker compose up --build
 ```
 
+## CI/CD workflow
+
+This project follows standard web app CI/CD best practices:
+
+- Pull requests must pass lint + tests + build before merge.
+- GitHub Actions pipeline defined in `.github/workflows/ci.yml`:
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+  - `npm run audit`
+  - artifact collection for diagnostics
+- Docker publish pipeline in `.github/workflows/docker-publish.yml` builds and pushes to GitHub Container Registry (`ghcr.io/eruizpy/nightcityverse:latest`).
+- Release tags are managed via GitHub release flow (latest: `v0.1.0`).
+- PR template in `.github/PULL_REQUEST_TEMPLATE.md`.
+- Issue templates in `.github/ISSUE_TEMPLATE`.
+
 ## Security & SDLC hardening
 
 - Fastify body limit set to 1MB to prevent large JSON DOS.
