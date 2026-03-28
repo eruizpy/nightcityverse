@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  nightcityverse:
+    build: .
+    ports:
+      - '4321:4321'
+    environment:
+      NODE_ENV: production
+      FORCE_CONTAINER: 'true'
+      # Add provider credentials if required
+      # ANTHROPIC_API_KEY: ''
+      # OPENAI_API_KEY: ''
+      # OLLAMA_BASE_URL: ''

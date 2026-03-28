@@ -41,6 +41,29 @@ npm run dev --workspace=nightcityverse
 
 `MINIVERSE_PORT` is accepted only as a temporary compatibility fallback.
 
+## Docker-only runtime requirement
+
+NightCityVerse now enforces execution inside a container.
+At startup, `server/index.ts` checks typical container signals (`/.dockerenv`, `/proc/1/cgroup`), and exits with code 1 outside Docker unless `FORCE_CONTAINER=true` is set.
+
+Build locally:
+
+```bash
+docker build -t nightcityverse:latest .
+```
+
+Run container:
+
+```bash
+docker run -p 4321:4321 --rm -e FORCE_CONTAINER=true nightcityverse:latest
+```
+
+Or with Compose:
+
+```bash
+docker compose up --build
+```
+
 ## Security & SDLC hardening
 
 - Fastify body limit set to 1MB to prevent large JSON DOS.

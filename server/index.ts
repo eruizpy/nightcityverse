@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws'
 import { createServer } from 'http'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
+import { existsSync, readFileSync } from 'fs'
 import { World } from './world.js'
 import type { AgentAnimState } from './world.js'
 import {
@@ -19,6 +20,25 @@ const IS_DEV    = process.env.NODE_ENV !== 'production'
 const PORT      = Number(process.env.NIGHTCITYVERSE_PORT ?? process.env.MINIVERSE_PORT ?? 4321)
 
 const ALLOWED_PROVIDERS = ['anthropic', 'openai', 'ollama'] as const
+
+function isRunningInContainer(): boolean {
+  if (process.env.FORCE_CONTAINER === 'false') return false
+  if (process.env.FORCE_CONTAINER === 'true') return true
+
+  if (existsSync('/.dockerenv')) return true
+
+  try {
+    const cgroup = readFileSync('/proc/1/cgroup', 'utf8')
+    return /docker|kubepods|containerd|podman/.test(cgroup)
+  } catch {
+    return false
+  }
+}
+
+if (!isRunningInContainer()) {
+  console.error('ERROR: NightCityVerse must run inside a Docker container. Set FORCE_CONTAINER=true to bypass in special cases.')
+  process.exit(1)
+}
 
 // ── HTTP Server ───────────────────────────────────────────────────────────────
 
