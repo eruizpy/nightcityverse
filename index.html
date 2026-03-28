@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>NightCityVerse</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a14;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Courier New', Courier, monospace;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* ── HUD ─────────────────────────────────────────────────────────────── */
+    #hud {
+      width: 800px;
+      padding: 0 12px;
+      height: 38px;
+      background: rgba(0,0,0,0.90);
+      border-bottom: 2px solid #00d4ff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-weight: bold;
+      color: #00d4ff;
+      letter-spacing: 3px;
+      font-size: 12px;
+      text-shadow: 0 0 10px rgba(0,212,255,0.6);
+    }
+
+    .hud-sep { color: #333; }
+
+    #ws-status { display: flex; align-items: center; gap: 4px; color: #8a8aa0; }
+    #ws-dot { width: 7px; height: 7px; border-radius: 50%; background: #444; flex-shrink: 0; transition: background 0.3s; }
+    #ws-dot.connected { background: #2ECC71; box-shadow: 0 0 6px #2ECC71; }
+    #ws-dot.error     { background: #e74c3c; }
+
+    /* ── Provider badge ───────────────────────────────────────────────────── */
+    #provider-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 3px;
+      border: 1px solid #333;
+      background: rgba(255,255,255,0.04);
+      transition: border-color 0.2s;
+      user-select: none;
+      position: relative;
+    }
+    #provider-badge:hover { border-color: #00d4ff; }
+    #provider-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    #provider-label { font-size: 10px; color: #ccc; }
+    #provider-caret { color: #666; font-size: 9px; }
+
+    /* Provider dropdown */
+    #provider-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+      background: #0d0d1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      min-width: 200px;
+      z-index: 200;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+    #provider-dropdown.open { display: block; }
+    .provider-option {
+      padding: 7px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      border-bottom: 1px solid #1a1a2e;
+      transition: background 0.1s;
+    }
+    .provider-option:last-child { border-bottom: none; }
+    .provider-option:hover { background: rgba(0,212,255,0.08); }
+    .provider-option.active { background: rgba(0,212,255,0.12); }
+    .provider-option.unavailable { opacity: 0.4; cursor: not-allowed; }
+    .po-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .po-name { flex: 1; }
+    .po-status { font-size: 9px; color: #8a8aa0; }
+    .po-check { color: #00d4ff; font-size: 10px; }
+
+    .hud-hint { color: #555; margin-left: auto; font-size: 10px; white-space: nowrap; }
+    .build-tag {
+      color: #4d4d66;
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    kbd { background: #1a1a2e; padding: 1px 5px; border-radius: 2px; border: 1px solid #333; color: #aaa; }
+
+    /* ── Canvas ───────────────────────────────────────────────────────────── */
+    #world-canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* ── Agent status sidebar ─────────────────────────────────────────────── */
+    #status-bar {
+      position: fixed;
+      top: 42px;
+      left: calc(50% - 400px - 164px);
+      width: 152px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      pointer-events: none;
+    }
+    .agent-card {
+      background: rgba(8,8,20,0.92);
+      border-radius: 3px;
+      padding: 6px 8px;
+      font-size: 10px;
+      border-left: 3px solid #333;
+    }
+    .agent-card .agent-name { font-weight: bold; margin-bottom: 2px; }
+    .agent-card .agent-state-label { font-size: 9px; margin-top: 1px; }
+    .agent-card .agent-task { color: #666; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 134px; }
+
+    /* ── Speech log ───────────────────────────────────────────────────────── */
+    #speech-log {
+      position: fixed;
+      top: 42px;
+      left: calc(50% + 400px + 8px);
+      width: 180px;
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      pointer-events: none;
+    }
+    .speech-item {
+      background: rgba(8,8,20,0.92);
+      border-left: 3px solid #00d4ff;
+      padding: 5px 8px;
+      font-size: 10px;
+      border-radius: 0 3px 3px 0;
+      animation: slideIn 0.2s ease;
+    }
+    .speech-item .speech-agent { font-weight: bold; margin-bottom: 2px; }
+    .speech-item .speech-msg { color: #aaa; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(8px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ── Claude / LLM editor panel ────────────────────────────────────────── */
+    #editor-panel {
+      position: fixed;
+      bottom: 0;
+      left: calc(50% - 400px);
+      width: 800px;
+      background: rgba(8,8,20,0.97);
+      border-top: 2px solid #00d4ff;
+      padding: 10px 14px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+    }
+    #editor-panel.open { display: flex; }
+    #editor-provider-tag {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 2px;
+      border: 1px solid #333;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    #editor-input {
+      flex: 1;
+      background: #0d0d1a;
+      color: #fff;
+      border: 1px solid #333;
+      padding: 7px 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      border-radius: 3px;
+      outline: none;
+    }
+    #editor-input:focus { border-color: #00d4ff; }
+    #editor-send {
+      background: #00d4ff;
+      color: #050510;
+      border: none;
+      padding: 7px 14px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    #editor-send:hover { background: #33ddff; }
+    #editor-send:disabled { opacity: 0.4; cursor: not-allowed; }
+    #editor-thinking {
+      color: #8a8aa0;
+      font-size: 10px;
+      display: none;
+      white-space: nowrap;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0.3 } }
+    #editor-close { color: #555; cursor: pointer; font-size: 16px; padding: 4px; }
+    #editor-close:hover { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <div id="hud">
+    <span class="logo">◈ NIGHTCITYVERSE</span>
+    <span class="hud-sep">|</span>
+
+    <div id="ws-status">
+      <div id="ws-dot"></div>
+      <span id="ws-label">connecting…</span>
+    </div>
+
+    <span class="hud-sep">|</span>
+
+    <!-- Provider badge + dropdown -->
+    <div id="provider-badge">
+      <div id="provider-dot" style="background:#444"></div>
+      <span id="provider-label">—</span>
+      <span id="provider-caret">▾</span>
+      <div id="provider-dropdown">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <span class="build-tag">build: live</span>
+    <span class="hud-hint">Press <kbd>E</kbd> to edit · <kbd>Esc</kbd> close</span>
+  </div>
+
+  <canvas id="world-canvas" width="800" height="560"></canvas>
+
+  <div id="status-bar"></div>
+  <div id="speech-log"></div>
+
+  <div id="editor-panel">
+    <span id="editor-provider-tag">—</span>
+    <input id="editor-input" type="text"
+           placeholder="Describe the change… e.g. add a plant near devops, move the coffee machine" />
+    <span id="editor-thinking">thinking…</span>
+    <button id="editor-send">Send</button>
+    <span id="editor-close" title="Close (Esc)">✕</span>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
