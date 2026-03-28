@@ -10,7 +10,8 @@ NightCityVerse is a standalone visual runtime for observing and editing an AI-ag
 
 - License: MIT (see [LICENSE](LICENSE))
 - This repository is open source and contributions are welcome via PR.
-- For security and governance, observe the `CODE_OF_CONDUCT` and `CONTRIBUTING` (TBD) in future iterations.
+- For community rules, see [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) and [CONTRIBUTING](CONTRIBUTING.md).
+- For security reporting, see [SECURITY](SECURITY.md).
 
 ## Scope
 
