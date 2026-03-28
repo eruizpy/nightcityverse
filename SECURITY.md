@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security issue, do not open a public issue. Instead, send an email to the maintainer at `eruizpy@example.com` with:
+If you discover a security issue, do not open a public issue. Instead, send an email to the maintainer at `erdpy@pm.me` with:
 
 - A concise description of the vulnerability
 - Steps to reproduce
