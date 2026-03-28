@@ -1,5 +1,8 @@
 # NightCityVerse
 
+![CI](https://github.com/eruizpy/nightcityverse/actions/workflows/ci.yml/badge.svg)
+![Docker Build](https://github.com/eruizpy/nightcityverse/actions/workflows/docker-publish.yml/badge.svg)
+
 NightCityVerse is a standalone visual runtime for observing and editing an AI-agent world.
 
 ## Scope
