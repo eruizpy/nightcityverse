@@ -26,7 +26,7 @@ Examples of unacceptable behavior include:
 
 Project maintainers are responsible for clarifying which behaviors are acceptable and for enforcing this Code of Conduct. We expect cooperation from project members to help keep the project a safe place for all.
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at `eruizpy@example.com`.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at `erdpy@pm.me`.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
