@@ -10,6 +10,7 @@
  */
 
 import type { WorldSnapshot, WorldPatch, TileType } from './world.js'
+import { COLS, ROWS } from './world.js'
 
 // ── Provider types ─────────────────────────────────────────────────────────────
 
@@ -157,10 +158,11 @@ You MUST respond with ONLY a valid JSON object — no markdown fences, no commen
 }
 
 function buildUserPrompt(snapshot: WorldSnapshot, userRequest: string): string {
+  const cached = userRequest.trim().slice(0, 512)
   const agentSummary = Object.values(snapshot.agents)
     .map(a => `  ${a.id}: pos(col=${a.position.col}, row=${a.position.row}), state=${a.state}${a.task ? `, task="${a.task}"` : ''}`)
     .join('\n')
-  return `CURRENT MAP (row 0 = top):\n${tileMapToText(snapshot.tilemap)}\n\nAGENTS:\n${agentSummary}\n\nUSER REQUEST: "${userRequest}"`
+  return `CURRENT MAP (row 0 = top):\n${tileMapToText(snapshot.tilemap)}\n\nAGENTS:\n${agentSummary}\n\nUSER REQUEST: "${cached}"`
 }
 
 // ── Provider implementations ──────────────────────────────────────────────────
@@ -249,19 +251,31 @@ function extractPatch(rawText: string): WorldPatch | null {
     const parsed = JSON.parse(jsonMatch[0]) as {
       message?: string
       tilePatch?: Array<{ col: number; row: number; tile: number | string }>
-      agentPatch?: Record<string, unknown>
+      agentPatch?: Record<string, Partial<Record<string, unknown>>> 
     }
 
-    const tilePatch = (parsed.tilePatch ?? []).map(tp => ({
-      col:  Number(tp.col),
-      row:  Number(tp.row),
-      tile: (typeof tp.tile === 'string' ? (TILE_IDS[tp.tile] ?? 0) : Number(tp.tile)) as TileType,
-    }))
+    const tilePatch = (Array.isArray(parsed.tilePatch) ? parsed.tilePatch : []).reduce<Array<{ col: number; row: number; tile: TileType }>>((acc, tp) => {
+      if (!tp || typeof tp !== 'object') return acc
+      const col = Number((tp as any).col)
+      const row = Number((tp as any).row)
+      const tileRaw = (tp as any).tile
+      const tile = typeof tileRaw === 'string' ? (TILE_IDS[tileRaw] ?? -1) : Number(tileRaw)
+
+      if (!Number.isInteger(col) || !Number.isInteger(row) || !Number.isInteger(tile)) return acc
+      if (row < 0 || row >= ROWS || col < 0 || col >= COLS || tile < 0 || tile > 7) return acc
+
+      acc.push({ col, row, tile: tile as TileType })
+      return acc
+    }, [])
+
+    const agentPatch = typeof parsed.agentPatch === 'object' && parsed.agentPatch !== null 
+      ? parsed.agentPatch as WorldPatch['agentPatch']
+      : {}
 
     return {
-      message:    parsed.message,
+      message: parsed.message,
       tilePatch,
-      agentPatch: (parsed.agentPatch ?? {}) as WorldPatch['agentPatch'],
+      agentPatch,
     }
   } catch (err) {
     console.error('[llm] JSON parse error:', err)
@@ -308,3 +322,7 @@ export async function editWorldWithLLM(
     return null
   }
 }
+
+// Helpers exported for unit testing
+export { extractPatch }
+

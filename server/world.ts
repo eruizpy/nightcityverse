@@ -33,11 +33,22 @@ export interface WorldPatch {
 export const COLS = 20
 export const ROWS = 14
 
+export const VALID_AGENT_STATES = ['idle', 'working', 'thinking', 'sleeping', 'error', 'offline'] as const
+
+type ValidAgentState = (typeof VALID_AGENT_STATES)[number]
+
 const AGENT_COLORS: Record<string, string> = {
   frontend: '#FFD600',
   backend:  '#FF6B35',
   devops:   '#7B68EE',
   pm:       '#2ECC71',
+}
+
+function ensureValidState(state: string): AgentAnimState {
+  if (VALID_AGENT_STATES.includes(state as ValidAgentState)) {
+    return state as AgentAnimState
+  }
+  return 'idle'
 }
 
 // ── Default tilemap ────────────────────────────────────────────────────────────
@@ -111,20 +122,22 @@ export class World {
     energy?: number
   }): void {
     const { agent: id, name, state, task, energy } = opts
+    const safeState = ensureValidState(state)
+
     const existing = this.agents[id]
     if (!existing) {
       // Auto-create unknown agents
       this.agents[id] = {
         id,
         name: name ?? id,
-        state,
+        state: safeState,
         position: { col: 10, row: 7 },
         color: AGENT_COLORS[id] ?? '#AAAAAA',
         ...(task ? { task } : {}),
         ...(energy !== undefined ? { energy } : {}),
       }
     } else {
-      existing.state = state
+      existing.state = safeState
       if (name) existing.name = name
       if (task !== undefined) existing.task = task
       if (energy !== undefined) existing.energy = energy
@@ -149,16 +162,25 @@ export class World {
   applyPatch(patch: WorldPatch): void {
     if (patch.tilePatch) {
       for (const { col, row, tile } of patch.tilePatch) {
-        if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+        if (!Number.isInteger(col) || !Number.isInteger(row) || !Number.isInteger(tile)) continue
+        if (row >= 0 && row < ROWS && col >= 0 && col < COLS && tile >= 0 && tile <= 7) {
           this.tilemap[row][col] = tile
         }
       }
     }
     if (patch.agentPatch) {
       for (const [id, delta] of Object.entries(patch.agentPatch)) {
-        if (this.agents[id] && delta) {
-          Object.assign(this.agents[id], delta)
+        const existingAgent = this.agents[id]
+        if (!existingAgent || !delta) continue
+
+        if (delta.state) {
+          // Normalize malformed states to idle
+          const safeState = ensureValidState(String(delta.state))
+          existingAgent.state = safeState
+          delete delta.state
         }
+
+        Object.assign(existingAgent, delta)
       }
     }
   }

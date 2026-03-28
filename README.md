@@ -40,3 +40,18 @@ npm run dev --workspace=nightcityverse
 - `OLLAMA_MODEL`
 
 `MINIVERSE_PORT` is accepted only as a temporary compatibility fallback.
+
+## Security & SDLC hardening
+
+- Fastify body limit set to 1MB to prevent large JSON DOS.
+- Enforced `Content-Type: application/json` on POST endpoints.
+- Request schema validation for all API routes.
+- Strict patch validation for tile coordinates and agent state.
+- LLM prompts trimmed to 512 characters and output parsing resilient.
+- Central provider whitelist (`anthropic`, `openai`, `ollama`) with safe transitions.
+## DevOps / CI checklist
+
+- Run `npm run lint` and `npm test` on pull requests
+- Use `npm audit` regularly for dependency vulnerabilities
+- Keep `.env` secrets outside source control and use secret stores in CI/CD
+
